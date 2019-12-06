@@ -1,0 +1,11 @@
+# sections are separated by spaces
+# python file must end in .py and can be in quotes
+# minute, hour, day, month, weekday
+# weekday can be 3 letter abbreviation for the day
+
+* * * * * test
+* * * * * test
+* * * * * test2
+37 * * * * test3
+x * * * * test4
+@yearly test5
