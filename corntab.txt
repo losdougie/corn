@@ -3,7 +3,7 @@
 # minute, hour, day, month, weekday
 # weekday can be 3 letter abbreviation for the day
 
-* * * * * test
+* * * * * test/popcorn.py
 * * * * * test
 * * * * * test2
 37 * * * * test3

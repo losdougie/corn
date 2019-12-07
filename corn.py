@@ -189,7 +189,7 @@ def main():
             weed()
 
         if wait:
-            # waiting for close to minute
+            # waiting for end of the minute
             time.sleep(59 - datetime.datetime.now().second)
             wait = False
         time.sleep(0.2)  # slows loop to only check 5 times a second after waiting
