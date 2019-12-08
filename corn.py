@@ -1,6 +1,8 @@
 import datetime
 import time
 import hashlib
+import os
+import subprocess
 
 
 def hash_file(file):
@@ -19,7 +21,8 @@ def hash_task(task):
             str(task["day"]),
             str(task["month"]),
             str(task["weekday"]),
-            str(task["task"]),
+            str(task["py_file"]),
+            str(task["args"]),
         ]
     )
     return hashlib.md5(task_string.encode("UTF-8")).hexdigest()
@@ -54,15 +57,11 @@ def sow(line):
     if line_hash in errors:
         return None
     if line[:1] == "@":
-        weed(error_id=line_hash, error_text="corn doesn't support cron-style special strings")
+        weed(
+            error_id=line_hash,
+            error_text="corn doesn't support cron-style special strings",
+        )
         return None
-    # standardize the line into a task dictionary
-    minute = []
-    hour = []
-    day = []
-    month = []
-    weekday = []
-    task_text = ""
     # break up line into sections - split on space and tab
     line = line.replace("\t", " ")
     while "  " in line:
@@ -77,11 +76,19 @@ def sow(line):
     d = section.pop(0)
     mo = section.pop(0)
     w = section.pop(0)
-    tt = " ".join(section).strip()
-    if tt == "":
-        weed(error_id=line_hash, error_text="No task for line: {}".format(line))
+    task_string = " ".join(section).strip()
+    py_file, args = germinate(task_string, line_hash)
+    if py_file is None:
         return None
-    task_text = tt
+    task = grow(m, h, d, mo, w, py_file, args)
+    if task is None:
+        return None
+    return task
+
+
+def grow(m, h, d, mo, w, py_file, args):
+    # standardize the line into a task dictionary
+    minute, hour, day, month, weekday = [], [], [], [], []
     # handle ranges
     # handle divisions
     # handle lists - split on commas
@@ -119,9 +126,45 @@ def sow(line):
         "day": day,
         "month": month,
         "weekday": weekday,
-        "task": task_text,
+        "py_file": py_file,
+        "args": args,
     }
     return task
+
+
+def germinate(task_string, line_hash):
+    if task_string == "":
+        weed(error_id=line_hash, error_text="No task for line: {}".format(line))
+        return None, None
+    # find python file
+    if ".py" not in task_string:
+        weed(
+            error_id=line_hash,
+            error_text="Python file not found. Python file must end in .py",
+        )
+        return None, None
+    file_args = task_string.split(".py")
+    py_file = file_args[0] + ".py"
+    py_file = py_file.strip().strip('"')
+    base_dir = os.path.dirname(os.path.realpath(__file__))
+    if py_file[:1] == ".":
+        py_file = os.path.join(base_dir, py_file[1:])
+    if "\\" not in py_file and "//" not in py_file:
+        py_file = os.path.join(base_dir, py_file)
+    if not os.path.isfile(py_file):
+        weed(error_id=line_hash, error_text="Python file not found.")
+        return None, None
+    if len(file_args) == 1:
+        args = ""
+    elif len(file_args) == 2:
+        args = file_args[1].strip().strip('"')
+    else:
+        weed(
+            error_id=line_hash,
+            error_text="Could not determine args for {}".format(py_file),
+        )
+        return None, None
+    return py_file, args
 
 
 def harvest(schedule, now):
@@ -149,7 +192,11 @@ def ripe(task, now):
 
 def pick(task):
     # run task as separate process
-    print(task["task"], "at {}".format(datetime.datetime.now()))
+    # print("Running", task["py_file"], "at {}".format(datetime.datetime.now()))
+    subprocess.Popen(
+        " ".join(["python", task["py_file"], task["args"]]).strip(), shell=True
+    )
+
 
 def weed(error_id=None, error_text=None):
     # global error handling and prints errors only once.
@@ -162,7 +209,6 @@ def weed(error_id=None, error_text=None):
             if errors[error] is not None:
                 print(errors[error])
                 errors[error] = None
-
 
 
 def main():
