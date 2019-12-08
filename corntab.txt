@@ -22,7 +22,7 @@
 # +--------------------------- min (0-59)
 #
 # * represents first to last
-#
+# fields can contain comma separated lists of values
 ##############################################################
 
 * * * * * test/popcorn.py

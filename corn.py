@@ -27,6 +27,64 @@ def hash_task(task):
     )
     return hashlib.md5(task_string.encode("UTF-8")).hexdigest()
 
+def month_num(month):
+    months = {
+        "jan": 1,
+        "january": 1,
+        "feb": 2,
+        "february": 2,
+        "mar": 3,
+        "march": 3,
+        "apr": 4,
+        "april": 4,
+        "may": 5,
+        "jun": 6,
+        "june": 6,
+        "jul": 7,
+        "july": 7,
+        "aug": 8,
+        "august": 8,
+        "sep": 9,
+        "september": 9,
+        "oct": 10,
+        "october": 10,
+        "nov": 11,
+        "november": 11,
+        "dec": 12,
+        "december": 12
+    }
+    if not isinstance(month, str):
+        return None
+    month = month.strip().lower()
+    if month in months:
+        return months[month]
+    else:
+        return None
+
+def weekday_num(weekday):
+    weekdays = {
+        "mon": 1,
+        "monday": 1,
+        "tue": 2,
+        "tuesday": 2,
+        "wed": 3,
+        "wednesday": 3,
+        "thu": 4,
+        "thursday": 4,
+        "fri": 5,
+        "friday": 5,
+        "sat": 6,
+        "saturday": 6,
+        "sun": 7,
+        "sunday": 7
+    }
+    if not isinstance(weekday, str):
+        return None
+    weekday = weekday.strip().lower()
+    if weekday in weekdays:
+        return weekdays[weekday]
+    else:
+        return None
 
 def plant(file):
     schedule = []
@@ -80,46 +138,19 @@ def sow(line):
     py_file, args = germinate(task_string, line_hash)
     if py_file is None:
         return None
-    task = grow(m, h, d, mo, w, py_file, args)
+    task = grow(m, h, d, mo, w, py_file, args, line_hash)
     if task is None:
         return None
     return task
 
 
-def grow(m, h, d, mo, w, py_file, args):
+def grow(m, h, d, mo, w, py_file, args, line_hash):
     # standardize the line into a task dictionary
-    minute, hour, day, month, weekday = [], [], [], [], []
-    # handle ranges
-    # handle divisions
-    # handle lists - split on commas
-    if m != "*":
-        if m.isnumeric() and 0 < int(m) < 59:
-            minute.append(int(m))
-    if h != "*":
-        if h.isnumeric() and 0 < int(h) < 60:
-            hour.append(int(h))
-    if d != "*":
-        if d.isnumeric() and 1 < int(d) < 31:
-            day.append(int(d))
-    if mo != "*":
-        if mo.isnumeric() and 1 < int(mo) < 12:
-            month.append(int(mo))
-    if w != "*":
-        week_names = {
-            "mon": 1,
-            "tue": 2,
-            "wed": 3,
-            "thu": 4,
-            "fri": 5,
-            "sat": 6,
-            "sun": 7,
-        }
-        if w.isnumeric() and 0 < w < 7:
-            if w == 0:
-                w = 7  # weekday of 0 should be listed as 7 - sunday is 7 in the check
-            weekday.append(int(w))
-        elif w.lower() in week_names:  # (3 letters or full name - case insensitive)
-            weekday.append(week_names[w.lower()])
+    minute = sprout(m, "m")
+    hour = sprout(h, "h")
+    day = sprout(d, "d")
+    month = sprout(mo, "mo")
+    weekday = sprout(w, "w")
     task = {
         "minute": minute,
         "hour": hour,
@@ -130,6 +161,35 @@ def grow(m, h, d, mo, w, py_file, args):
         "args": args,
     }
     return task
+
+def sprout(time_field, time_type):
+    # handle lists - split on commas
+    # handle ranges
+    # handle divisions
+    time_range = []
+    if time_field == "*":
+        return time_range
+    boundries = {
+        "m": {"min": 0, "max": 59},
+        "h": {"min": 0, "max": 23},
+        "d": {"min": 0, "max": 59},
+        "mo": {"min": 0, "max": 12},
+        "w": {"min": 0, "max": 7}
+    }
+    units = time_field.split(",")
+    for unit in units:
+        if unit.isnumeric():
+            if boundries[time_type]["min"] <= int(unit) <= boundries[time_type]["max"]:
+                if time_type == "w" and unit == 0:
+                    unit = 7  # weekday of 0 should be listed as 7 - sunday is 7 in the check
+                time_range.append(int(unit))
+        elif time_type == "mo" and month_num(unit) is not None:
+            time_range.append(month_num(unit))
+        elif time_type == "w" and weekday_num(unit) is not None:
+            time_range.append(weekday_num(unit))
+    return time_range
+
+
 
 
 def germinate(task_string, line_hash):
@@ -187,6 +247,7 @@ def ripe(task, now):
     )  # This corrects for datetime to use 1 for Monday and 7 for Sunday
     if task["weekday"] != [] and weekday not in task["weekday"]:
         return False
+    # print(task)
     return True
 
 
