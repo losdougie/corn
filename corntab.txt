@@ -1,11 +1,28 @@
-# sections are separated by spaces
-# python file must end in .py and can be in quotes
-# minute, hour, day, month, weekday
-# weekday can be 3 letter abbreviation for the day
+#############################################################
+## The time and date fields are:
+##
+## field	     allowed values
+## -----	     --------------
+## minute	     0-59
+## hour	     0-23
+## day of month   1-31
+## month	     1-12 (or names, see below)
+## day of week    0-7 (0 or 7 is Sun, or use names)
+##
+######
+# Line format:
+# * * * * * py_file.py args
+# - - - - -     -       -
+# | | | | |     |       +----- arguments for the python file
+# | | | | |     +------------- python file
+# | | | | +------------------- day of the week (0-6, Sunday=0, or 3 letter abbreviation)
+# | | | +--------------------- month (1-12)
+# | | +----------------------- day or month (1-31)
+# | +------------------------- hour (0-23)
+# +--------------------------- min (0-59)
+#
+# * represents first to last
+#
+##############################################################
 
 * * * * * test/popcorn.py
-* * * * * test
-* * * * * test2
-37 * * * * test3
-x * * * * test4
-@yearly test5

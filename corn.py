@@ -193,6 +193,7 @@ def ripe(task, now):
 def pick(task):
     # run task as separate process
     # print("Running", task["py_file"], "at {}".format(datetime.datetime.now()))
+    # may want to redirect stdout
     subprocess.Popen(
         " ".join(["python", task["py_file"], task["args"]]).strip(), shell=True
     )
