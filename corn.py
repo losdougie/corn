@@ -27,6 +27,7 @@ def hash_task(task):
     )
     return hashlib.md5(task_string.encode("UTF-8")).hexdigest()
 
+
 def month_num(month):
     months = {
         "jan": 1,
@@ -51,7 +52,7 @@ def month_num(month):
         "nov": 11,
         "november": 11,
         "dec": 12,
-        "december": 12
+        "december": 12,
     }
     if not isinstance(month, str):
         return None
@@ -60,6 +61,7 @@ def month_num(month):
         return months[month]
     else:
         return None
+
 
 def weekday_num(weekday):
     weekdays = {
@@ -76,7 +78,7 @@ def weekday_num(weekday):
         "sat": 6,
         "saturday": 6,
         "sun": 7,
-        "sunday": 7
+        "sunday": 7,
     }
     if not isinstance(weekday, str):
         return None
@@ -85,6 +87,7 @@ def weekday_num(weekday):
         return weekdays[weekday]
     else:
         return None
+
 
 def plant(file):
     schedule = []
@@ -162,6 +165,7 @@ def grow(m, h, d, mo, w, py_file, args, line_hash):
     }
     return task
 
+
 def sprout(time_field, time_type):
     # handle lists - split on commas
     # handle ranges
@@ -174,22 +178,22 @@ def sprout(time_field, time_type):
         "h": {"min": 0, "max": 23},
         "d": {"min": 0, "max": 59},
         "mo": {"min": 0, "max": 12},
-        "w": {"min": 0, "max": 7}
+        "w": {"min": 0, "max": 7},
     }
     units = time_field.split(",")
     for unit in units:
         if unit.isnumeric():
             if boundries[time_type]["min"] <= int(unit) <= boundries[time_type]["max"]:
                 if time_type == "w" and unit == 0:
-                    unit = 7  # weekday of 0 should be listed as 7 - sunday is 7 in the check
+                    unit = (
+                        7
+                    )  # weekday of 0 should be listed as 7 - sunday is 7 in the check
                 time_range.append(int(unit))
         elif time_type == "mo" and month_num(unit) is not None:
             time_range.append(month_num(unit))
         elif time_type == "w" and weekday_num(unit) is not None:
             time_range.append(weekday_num(unit))
     return time_range
-
-
 
 
 def germinate(task_string, line_hash):
@@ -275,18 +279,31 @@ def weed(error_id=None, error_text=None):
 
 def main():
     corntab = "corntab.txt"
-    last_run_minute = datetime.datetime.now().minute - 1
+    last_run_minute = datetime.datetime.now().minute
     file_hash = ""
     schedule = []
     global errors
     errors = {}
+    wait = True
 
     while True:
+        time.sleep(0.2)  # slows loop to only check 5 times a second after waiting
+        # print("looping at", datetime.datetime.now())
+        if wait:
+            # waiting for end of the minute
+            wait_time = 59 - datetime.datetime.now().second
+            # print("waiting for {}s at {}".format(wait_time, datetime.datetime.now()))
+            time.sleep(wait_time)
+            wait = False
         now = datetime.datetime.now()
         # start loop at the top of the minute - track last minute
-        if last_run_minute < now.minute or (last_run_minute == 60 and now.minute == 0):
-            last_run_minute = now.minute
+        if last_run_minute < now.minute:
+            if last_run_minute == 59:
+                last_run_minute = -1
+            else:
+                last_run_minute = now.minute
             wait = True
+            # print("running at", datetime.datetime.now())
 
             # check file for changes
             if hash_file(corntab) != file_hash:
@@ -295,12 +312,6 @@ def main():
                 print("Scheduled {} tasks".format(len(schedule)))
             harvest(schedule, now)
             weed()
-
-        if wait:
-            # waiting for end of the minute
-            time.sleep(59 - datetime.datetime.now().second)
-            wait = False
-        time.sleep(0.2)  # slows loop to only check 5 times a second after waiting
 
 
 def test():
