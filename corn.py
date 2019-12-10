@@ -266,14 +266,19 @@ def germinate(task_string, line_hash):
     py_file = file_args[0] + ".py"
     py_file = py_file.strip().strip('"')
     base_dir = os.path.dirname(os.path.realpath(__file__))
-    if py_file[:1] == ".":
-        py_file = os.path.join(base_dir, py_file[1:])
-    if "\\" not in py_file and "//" not in py_file:
+    if "\\" not in py_file and "/" not in py_file:  # no path, just local file
         py_file = os.path.join(base_dir, py_file)
+    elif "\\" in base_dir and "/" in py_file:  # running on windows, fix paths
+        py_file.replace("/", "\\")
+    elif "/" in base_dir and "\\" in py_file:  # running on linux, fix paths
+        py_file.replace("\\", "/")
+    if py_file[:2] == "./" or py_file[:2] == ".\\":  # local folder
+        py_file = os.path.join(base_dir, py_file[2:])
     if not os.path.isfile(py_file):
-        weed(error_id=line_hash, error_text="Python file not found.")
+        weed(error_id=line_hash, error_text="Python file not found: {}".format(py_file))
         return None, None
-    py_file = "\"" + py_file + "\""
+    if " " in py_file:
+        py_file = '"' + py_file + '"'
     if len(file_args) == 1:
         args = ""
     elif len(file_args) == 2:
@@ -353,11 +358,8 @@ def main():
             wait = False
         now = datetime.datetime.now()
         # start loop at the top of the minute - track last minute
-        if last_run_minute < now.minute:
-            if now.minute == 59:
-                last_run_minute = -1
-            else:
-                last_run_minute = now.minute
+        if last_run_minute < now.minute or (last_run_minute == 59 and now.minute == 0):
+            last_run_minute = now.minute
             wait = True
             # print("running at", datetime.datetime.now())
 
