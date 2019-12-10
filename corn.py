@@ -273,6 +273,7 @@ def germinate(task_string, line_hash):
     if not os.path.isfile(py_file):
         weed(error_id=line_hash, error_text="Python file not found.")
         return None, None
+    py_file = "\"" + py_file + "\""
     if len(file_args) == 1:
         args = ""
     elif len(file_args) == 2:
