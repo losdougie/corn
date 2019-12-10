@@ -22,7 +22,13 @@
 # +--------------------------- min (0-59)
 #
 # * represents first to last
-# fields can contain comma separated lists of values
+# fields can contain comma separated lists of values (e.g. 0,30)
+# Ranges of numbers (inclusive) can be used, separated by a hyphen (-) (e.g. 0-5)
+# Steps can be used with ranges by following the range with a forward slash (/).
+# The step number will skip the numbers value through the range. (e.g. 0-6/2 equals 0,2,4,6)
+# * can be used with the step (e.g. */2 in the hours place represents every 2 hours)
+#
 ##############################################################
 
 * * * * * test/popcorn.py
+

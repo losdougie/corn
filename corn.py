@@ -89,6 +89,32 @@ def weekday_num(weekday):
         return None
 
 
+def unit_num(unit, time_type):
+    limit = {
+        "m": {"min": 0, "max": 59},
+        "h": {"min": 0, "max": 23},
+        "d": {"min": 1, "max": 31},
+        "mo": {"min": 1, "max": 12},
+        "w": {"min": 0, "max": 7},
+    }
+    if unit == "min":
+        return limit[time_type]["min"]
+    if unit == "max":
+        return limit[time_type]["max"]
+    if unit.isnumeric():
+        if limit[time_type]["min"] <= int(unit) <= limit[time_type]["max"]:
+            if time_type == "w" and unit == 0:
+                unit = (
+                    7
+                )  # weekday of 0 should be listed as 7 - sunday is 7 in the check
+            return int(unit)
+    elif time_type == "mo" and month_num(unit) is not None:
+        return month_num(unit)
+    elif time_type == "w" and weekday_num(unit) is not None:
+        return weekday_num(unit)
+    return None
+
+
 def plant(file):
     schedule = []
     task_hashes = []
@@ -163,6 +189,13 @@ def grow(m, h, d, mo, w, py_file, args, line_hash):
         "py_file": py_file,
         "args": args,
     }
+    for unit in task:
+        if task[unit] is None:
+            weed(
+                error_id=line_hash, error_text="Task {} unit is incorrect.".format(unit)
+            )
+            return None
+    # print(task)
     return task
 
 
@@ -170,30 +203,52 @@ def sprout(time_field, time_type):
     # handle lists - split on commas
     # handle ranges
     # handle divisions
-    time_range = []
+    time_values = []
     if time_field == "*":
-        return time_range
-    boundries = {
-        "m": {"min": 0, "max": 59},
-        "h": {"min": 0, "max": 23},
-        "d": {"min": 0, "max": 59},
-        "mo": {"min": 0, "max": 12},
-        "w": {"min": 0, "max": 7},
-    }
+        range_start = unit_num("min", time_type)
+        range_end = (
+            unit_num("max", time_type) + 1
+        )  # +1 to get all values in range from range function
+        for time_value in range(range_start, range_end):
+            time_values.append(time_value)
+        return time_values
     units = time_field.split(",")
     for unit in units:
-        if unit.isnumeric():
-            if boundries[time_type]["min"] <= int(unit) <= boundries[time_type]["max"]:
-                if time_type == "w" and unit == 0:
-                    unit = (
-                        7
-                    )  # weekday of 0 should be listed as 7 - sunday is 7 in the check
-                time_range.append(int(unit))
-        elif time_type == "mo" and month_num(unit) is not None:
-            time_range.append(month_num(unit))
-        elif time_type == "w" and weekday_num(unit) is not None:
-            time_range.append(weekday_num(unit))
-    return time_range
+        step = 1
+        if "/" in unit:
+            range_steps = unit.split("/")
+            if len(range_steps) > 2:
+                return None
+            if range_steps[1].isnumeric():
+                step = int(range_steps[1])
+                unit = range_steps[0]
+                if unit == "*":
+                    range_start = unit_num("min", time_type)
+                    range_end = unit_num("max", time_type)
+                    for time_value in range(range_start, range_end, step):
+                        time_values.append(time_value)
+                    continue
+            else:
+                return None
+        if "-" in unit:
+            unit_range = unit.split("-")
+            if len(unit_range) > 2:
+                return None
+            if unit_range[0].isnumeric() and unit_range[1].isnumeric():
+                range_start = int(unit_range[0])
+                range_end = (
+                    int(unit_range[1]) + 1
+                )  # +1 to get all values in range from range function
+            else:
+                return None
+            for time_value in range(range_start, range_end, step):
+                time_values.append(time_value)
+            continue
+        time_value = unit_num(unit, time_type)
+        if time_value is None:
+            return None
+        time_values.append(time_value)
+    return time_values
 
 
 def germinate(task_string, line_hash):
@@ -238,20 +293,19 @@ def harvest(schedule, now):
 
 
 def ripe(task, now):
-    if task["minute"] != [] and now.minute not in task["minute"]:
+    if now.minute not in task["minute"]:
         return False
-    if task["hour"] != [] and now.hour not in task["hour"]:
+    if now.hour not in task["hour"]:
         return False
-    if task["day"] != [] and now.day not in task["day"]:
+    if now.day not in task["day"]:
         return False
-    if task["month"] != [] and now.month not in task["month"]:
+    if now.month not in task["month"]:
         return False
     weekday = (
         now.weekday() + 1
     )  # This corrects for datetime to use 1 for Monday and 7 for Sunday
-    if task["weekday"] != [] and weekday not in task["weekday"]:
+    if weekday not in task["weekday"]:
         return False
-    # print(task)
     return True
 
 
@@ -259,6 +313,7 @@ def pick(task):
     # run task as separate process
     # print("Running", task["py_file"], "at {}".format(datetime.datetime.now()))
     # may want to redirect stdout
+    print("running {} at {}".format(task["py_file"], datetime.datetime.now()))
     subprocess.Popen(
         " ".join(["python", task["py_file"], task["args"]]).strip(), shell=True
     )
@@ -312,10 +367,6 @@ def main():
                 print("Scheduled {} tasks".format(len(schedule)))
             harvest(schedule, now)
             weed()
-
-
-def test():
-    print("ok")
 
 
 if __name__ == "__main__":
