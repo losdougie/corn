@@ -354,7 +354,7 @@ def main():
         now = datetime.datetime.now()
         # start loop at the top of the minute - track last minute
         if last_run_minute < now.minute:
-            if last_run_minute == 59:
+            if now.minute == 59:
                 last_run_minute = -1
             else:
                 last_run_minute = now.minute
