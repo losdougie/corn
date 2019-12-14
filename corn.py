@@ -269,9 +269,9 @@ def germinate(task_string, line_hash):
     if "\\" not in py_file and "/" not in py_file:  # no path, just local file
         py_file = os.path.join(base_dir, py_file)
     elif "\\" in base_dir and "/" in py_file:  # running on windows, fix paths
-        py_file.replace("/", "\\")
+        py_file = py_file.replace("/", "\\")
     elif "/" in base_dir and "\\" in py_file:  # running on linux, fix paths
-        py_file.replace("\\", "/")
+        py_file = py_file.replace("\\", "/")
     if py_file[:2] == "./" or py_file[:2] == ".\\":  # local folder
         py_file = os.path.join(base_dir, py_file[2:])
     if not os.path.isfile(py_file):
