@@ -349,6 +349,7 @@ def main():
 
     while True:
         time.sleep(0.2)  # slows loop to only check 5 times a second after waiting
+        now = datetime.datetime.now()
         # print("looping at", datetime.datetime.now())
         if wait:
             # waiting for end of the minute
@@ -356,7 +357,6 @@ def main():
             # print("waiting for {}s at {}".format(wait_time, datetime.datetime.now()))
             time.sleep(wait_time)
             wait = False
-        now = datetime.datetime.now()
         # start loop at the top of the minute - track last minute
         if last_run_minute < now.minute or (last_run_minute == 59 and now.minute == 0):
             last_run_minute = now.minute
